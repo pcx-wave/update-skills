@@ -21,7 +21,7 @@ This is the gap between "it works" and "I can maintain it."
 - Tracks the exact commit SHA of what you have installed vs what's upstream
 - Updates any skill — or all of them — with one command
 - Rolls back if an update breaks something
-- Zero pip dependencies. Zero API keys required. You're not locked into anything.
+- Zero pip dependencies. No API keys needed for source resolution. You're not locked into anything.
 
 ## Install
 
@@ -72,11 +72,11 @@ Previous versions are backed up automatically before each update.
 
 ## How source resolution works
 
-1. Reads the `# Title` from each `SKILL.md` — that's the skill name
-2. Searches DuckDuckGo for the skill name + common identifying phrases from the file
-3. Matches results against `filename:SKILL.md` on GitHub or direct repo patterns
-4. Ranks candidates by star count and path depth — the canonical repo usually wins
-5. Writes a `.skill-source` file so this is a one-time cost
+1. Reads verbatim phrases from the first 10 lines of each local `SKILL.md`
+2. Searches DuckDuckGo: `github <skill-name> <verbatim phrase>`
+3. For each candidate repo found, fetches the first 10 lines of the remote `SKILL.md`
+4. Rejects candidates where no sentence matches verbatim — eliminates forks and similarly-named but different skills
+5. Writes a `.skill-source` file so this is a one-time cost per skill
 
 ## `.skill-source` format
 
@@ -92,15 +92,17 @@ Each resolved skill directory gets a hidden JSON file:
 }
 ```
 
-## `GITHUB_TOKEN` — with vs without
+## `GITHUB_TOKEN` — optional
 
-| Without token | With `GITHUB_TOKEN` |
-|---|---|
-| DuckDuckGo + content comparison | GitHub API search + SHA comparison |
-| Content-sensitive (detects actual file diffs) | SHA-sensitive (detects any upstream commit) |
-| Works immediately, no config | Add to `.bashrc`/`.zshrc` for precision |
+Both modes work out of the box. The difference is precision and rate limits.
 
-Either way works. The token just gives you SHA-level precision instead of content-level.
+| | Without token | With `GITHUB_TOKEN` |
+|---|---|---|
+| **Detection** | SKILL.md content comparison | Exact commit SHA comparison |
+| **Misses** | Updates that don't touch SKILL.md | Nothing |
+| **Rate limit** | 60 GitHub API req/hour — inconsistent if run repeatedly | 5000/hour — no practical limit |
+
+To add a token permanently: `echo 'export GITHUB_TOKEN=<token>' >> ~/.bashrc`
 
 ## Requirements
 
